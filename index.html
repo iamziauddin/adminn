@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jaldise - Hidden Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans p-6 min-h-screen">
+
+    <div class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-center border-b border-gray-700 pb-4 mb-8">
+            <div>
+                <h1 class="text-3xl font-black text-amber-400">Jaldise Admin Control</h1>
+                <p class="text-gray-400 text-sm">Manage products and watch live incoming orders</p>
+            </div>
+            <div class="bg-gray-800 px-4 py-2 rounded-xl text-xs text-gray-300">
+                🔒 Secure Local Mode
+            </div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Left: Add Product Form -->
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 h-fit">
+                <h2 class="text-xl font-bold mb-4 text-white">📦 Add New Samaan</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Item Name</label>
+                        <input type="text" id="p-name" placeholder="e.g., Organic Bananas 1kg" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Price (₹)</label>
+                        <input type="number" id="p-price" placeholder="e.g., 60" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Image URL</label>
+                        <input type="text" id="p-img" placeholder="Paste image web link here" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Delivery Time Estimate</label>
+                        <input type="text" id="p-time" placeholder="e.g., 8 mins" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-400">
+                    </div>
+                    <button onclick="addProduct()" class="w-full bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2.5 rounded-lg text-sm transition mt-2">
+                        Add & Make Live
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right: Live Orders Tracking -->
+            <div class="lg:col-span-2 bg-gray-800 p-6 rounded-2xl border border-gray-700">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-white">🔔 Live Customer Orders</h2>
+                    <button onclick="clearOrders()" class="text-xs bg-red-900/40 hover:bg-red-900 text-red-300 px-3 py-1.5 rounded-lg border border-red-800 transition">Clear History</button>
+                </div>
+                <div id="admin-orders-list" class="space-y-4 max-h-[65vh] overflow-y-auto pr-2">
+                    <!-- Live Orders show up here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addProduct() {
+            const name = document.getElementById('p-name').value;
+            const price = document.getElementById('p-price').value;
+            const img = document.getElementById('p-img').value || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500';
+            const time = document.getElementById('p-time').value || '10 mins';
+
+            if(!name || !price) { alert("Name and Price are required!"); return; }
+
+            let currentProducts = JSON.parse(localStorage.getItem('jaldise_products')) || [];
+            currentProducts.push({
+                id: Date.now(), // unique id
+                name: name,
+                price: parseInt(price),
+                time: time,
+                image: img
+            });
+
+            localStorage.setItem('jaldise_products', JSON.stringify(currentProducts));
+            
+            // Clear inputs
+            document.getElementById('p-name').value = '';
+            document.getElementById('p-price').value = '';
+            document.getElementById('p-img').value = '';
+            document.getElementById('p-time').value = '';
+
+            alert("Samaan storefront par live bhej diya gaya hai!");
+        }
+
+        function loadOrders() {
+            const list = document.getElementById('admin-orders-list');
+            let orders = JSON.parse(localStorage.getItem('jaldise_orders')) || [];
+            
+            if(orders.length === 0) {
+                list.innerHTML = '<div class="text-center text-gray-500 py-10 text-sm">No new orders yet. Waiting for customer checkout...</div>';
+                return;
+            }
+
+            list.innerHTML = '';
+            orders.reverse().forEach(o => {
+                list.innerHTML += `
+                    <div class="bg-gray-750 border border-gray-700 p-4 rounded-xl space-y-2 relative shadow-md">
+                        <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                            <span class="font-extrabold text-amber-400 text-sm">Order #${o.id}</span>
+                            <span class="bg-green-900/50 text-green-400 font-bold px-3 py-1 rounded-full text-xs">₹${o.total}</span>
+                        </div>
+                        <p class="text-sm text-gray-200"><strong>Customer:</strong> ${o.customer}</p>
+                        <p class="text-sm text-gray-300"><strong>Address:</strong> ${o.address}</p>
+                        <p class="text-xs text-gray-400 bg-gray-900/40 p-2 rounded border border-gray-800 mt-1"><strong>Items Ordered:</strong> ${o.items}</p>
+                    </div>
+                `;
+            });
+        }
+
+        function clearOrders() {
+            if(confirm("Kya aap saare orders delete karna chahte hain?")) {
+                localStorage.removeItem('jaldise_orders');
+                loadOrders();
+            }
+        }
+
+        // Live refresh when order comes
+        window.addEventListener('storage', loadOrders);
+        // Initial setup
+        loadOrders();
+    </script>
+</body>
+</html>
